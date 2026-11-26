@@ -101,6 +101,30 @@ def _mean_error(run_dir: Path) -> float | None:
     return float(mean) if pd.notna(mean) else None
 
 
+def format_benchmark_markdown_table(records: list[dict]) -> str:
+    """Monta a tabela comparativa em Markdown; experimento sem execução vira '-'."""
+    rows_md = [
+        "# Comparativo Consolidado — Suite de 10 Experimentos (`30_06_2023.mp4`)",
+        "",
+        "| Experimento | Objetivo | Frames | Contados | Tam. Mediano (px) | Erro Médio (±%) | Tempo (s) | Pasta |",
+        "| :--- | :--- | :-: | :-: | :-: | :-: | :-: | :--- |",
+    ]
+    for r in records:
+        tag, desc, status = r["tag"], r["description"], r["status"]
+        if r["pasta"] is not None:
+            run_dir = Path(r["pasta"])
+            if r["erro_medio_pct"] is None:
+                r["erro_medio_pct"] = _mean_error(run_dir)
+            err_str = "-" if r["erro_medio_pct"] is None else f"±{r['erro_medio_pct']:.1f}%"
+            rows_md.append(
+                f"| `{tag}` | {desc} | {r['frames_processados']} | **{r['peixes_contados']}** "
+                f"| {r['comprimento_mediano_px']} | {err_str} | {r['tempo_execucao_s']}s | `{run_dir.name}` |"
+            )
+        else:
+            rows_md.append(f"| `{tag}` | {desc} | - | {status} | - | - | - | - |")
+    return "\n".join(rows_md) + "\n"
+
+
 def experiment_command(video: str, tag: str, extra_args: list[str]) -> list[str]:
     return [PY, SCRIPT, "--video", video, "--tag", tag, *extra_args]
 
@@ -156,28 +180,9 @@ def main() -> None:
     if idx_path.exists():
         df = pd.read_csv(idx_path)
         records = build_benchmark_records(df, results_summary)
-        rows_md = [
-            "# Comparativo Consolidado — Suite de 10 Experimentos (`30_06_2023.mp4`)",
-            "",
-            "| Experimento | Objetivo | Frames | Contados | Tam. Mediano (px) | Erro Médio (±%) | Tempo (s) | Pasta |",
-            "| :--- | :--- | :-: | :-: | :-: | :-: | :-: | :--- |",
-        ]
-        for r in records:
-            tag, desc, status = r["tag"], r["description"], r["status"]
-            if r["pasta"] is not None:
-                run_dir = Path(r["pasta"])
-                if r["erro_medio_pct"] is None:
-                    r["erro_medio_pct"] = _mean_error(run_dir)
-                err_str = "-" if r["erro_medio_pct"] is None else f"±{r['erro_medio_pct']:.1f}%"
-                rows_md.append(
-                    f"| `{tag}` | {desc} | {r['frames_processados']} | **{r['peixes_contados']}** "
-                    f"| {r['comprimento_mediano_px']} | {err_str} | {r['tempo_execucao_s']}s | `{run_dir.name}` |"
-                )
-            else:
-                rows_md.append(f"| `{tag}` | {desc} | - | {status} | - | - | - | - |")
 
         out_md = EXP_ROOT / "comparativo_10_experimentos.md"
-        out_md.write_text("\n".join(rows_md) + "\n", encoding="utf-8")
+        out_md.write_text(format_benchmark_markdown_table(records), encoding="utf-8")
         print(f"\nComparativo salvo em: {out_md}")
         if args.json_out:
             args.json_out.write_text(json.dumps(records, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
