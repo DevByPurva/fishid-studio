@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -5,7 +6,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pandas as pd
 
-from rastrear_peixes_auto import FISH_PROMPTS, PALETTE_BGR, _build_resumo, _class_name, _color_for_id, parse_args
+from rastrear_peixes_auto import (
+    FISH_PROMPTS,
+    PALETTE_BGR,
+    _build_resumo,
+    _class_name,
+    _color_for_id,
+    _write_yolo_dataset_meta,
+    parse_args,
+)
+
+
+def test_yolo_dataset_meta_files(tmp_path):
+    labels_dir = tmp_path / "labels_yolo"
+    labels_dir.mkdir()
+    _write_yolo_dataset_meta(tmp_path, labels_dir)
+
+    assert (labels_dir / "classes.txt").read_text(encoding="utf-8").splitlines() == ["fish"]
+    assert (tmp_path / "data.yaml").read_text(encoding="utf-8").splitlines() == [
+        f"path: {json.dumps(tmp_path.resolve().as_posix())}",
+        "train: frames_autolabel",
+        "val: frames_autolabel",
+        "nc: 1",
+        "names:",
+        "  0: fish",
+    ]
 
 
 def test_track_colors_use_bgr_palette_and_wrap():
