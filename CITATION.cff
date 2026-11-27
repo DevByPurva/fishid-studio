@@ -9,6 +9,7 @@ authors:
   - family-names: "Sant'Ana"
     given-names: "Rodrigo"
     affiliation: "Universidade do Vale do Itajaí (UNIVALI) — LEMA"
+    email: "rsantana@univali.br"
 repository-code: "https://github.com/viniciusscience/fishid-studio"
 doi: "10.5281/zenodo.24451918"
 version: "1.0.0"
