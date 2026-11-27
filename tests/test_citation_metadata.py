@@ -52,6 +52,7 @@ def test_citation_lists_both_authors():
     text = _read(CITATION_FILE)
     assert "da Silva de Souza" in text, "CITATION.cff is missing author José Vinícius da Silva de Souza"
     assert "Sant'Ana" in text, "CITATION.cff is missing author Rodrigo Sant'Ana"
+    assert "rsantana@univali.br" in text, "CITATION.cff is missing co-author institutional email"
 
 
 def test_citation_version_is_semver():
