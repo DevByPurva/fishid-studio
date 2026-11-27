@@ -215,6 +215,15 @@ def _classify_crop_via_fishid_api(
     return None
 
 
+def compute_polyline_lengths(points: list[np.ndarray]) -> tuple[float, float]:
+    """Retorna (comprimento da curva, comprimento direto) em pixels; a curva nunca fica menor que o direto."""
+    if len(points) < 2:
+        return 0.0, 0.0
+    curve_len = sum(float(np.linalg.norm(points[i] - points[i - 1])) for i in range(1, len(points)))
+    direct_len = float(np.linalg.norm(points[-1] - points[0]))
+    return max(curve_len, direct_len), direct_len
+
+
 def measure_mask_length(
     mask_u8: np.ndarray,
     n_slices: int = 24,
@@ -328,9 +337,7 @@ def measure_mask_length(
             sm.append(centerline[-1])
             centerline = sm
 
-    curve_len = sum(float(np.linalg.norm(centerline[i] - centerline[i - 1])) for i in range(1, len(centerline)))
-    direct_ext = float(np.linalg.norm(centerline[-1] - centerline[0]))
-    curve_len = max(curve_len, direct_ext)
+    curve_len, direct_ext = compute_polyline_lengths(centerline)
     razao_aspecto = curve_len / max(1.0, largura_corpo_px)
 
     return {
